@@ -1,17 +1,16 @@
 use super::data_types;
 
-pub struct View {
-  
-}
+pub struct View {}
 
 impl View {
-  pub fn print_area(area_to_print& Vec<Vec<data_types::CellStatus>>)  -> Result {
-    for i in 0..area_to_print.len() {
-    for j in 0..area_to_print[i].len() {
-      print!("{}", mine_area[i as usize][j as usize].as_str());
+    pub fn print_area(area_to_print: &Vec<Vec<data_types::CellStatus>>) -> Result<(), ()> {
+        for i in 0..area_to_print.len() {
+            for j in 0..area_to_print[i].len() {
+                print!("{}", area_to_print[i][j].as_str());
+            }
+            println!();
+        }
+        Ok(())
     }
-    println!("");
-  }
-  }
 }
-mine_area.len(), mine_area[0].len()
+// mine_area.len(), mine_area[0].len()
