@@ -1,27 +1,37 @@
+use crate::data_types::{Action, CellStatus};
+
 use super::data_types;
 use rand::distributions::uniform::{SampleUniform, UniformInt, UniformSampler};
 use rand::distributions::{Distribution, Uniform};
 use rand::Rng;
 
 pub struct GameArea {
-    game_area: Vec<Vec<data_types::CellStatus>>,
+    pub game_area: Vec<Vec<data_types::CellStatus>>,
     mined_area: Vec<Vec<data_types::CellStatus>>,
 }
 
 impl GameArea {
-    pub fn new(width: u16, height: u16, mine_count: u8) -> Self {
-        let game_area = vec![vec![data_types::CellStatus::CLOSED; width.into()]; height.into()];
-        let mut mined_area = vec![vec![data_types::CellStatus::CLOSED; width.into()]; height.into()];
-        Self::fill_mine_area(&mut mined_area, mine_count);
+    // pub fn new(width: u16, height: u16, mine_count: u8) -> Self {
+    //     let game_area = vec![vec![data_types::CellStatus::CLOSED; width.into()]; height.into()];
+    //     let mut mined_area = vec![vec![data_types::CellStatus::CLOSED; width.into()]; height.into()];
+    //     Self::fill_mine_area(&mut mined_area, mine_count);
 
-        Self {
-            game_area,
-            mined_area,
+    //     Self {
+    //         game_area,
+    //         mined_area,
+    //     }
+    // }
+
+    pub fn new() -> Self {
+        GameArea {
+            game_area: Vec::new(),
+            mined_area: Vec::new(),
         }
     }
 
     pub fn create_area(&mut self, width: u16, height: u16, mine_count: u8) {
         self.game_area = vec![vec![data_types::CellStatus::CLOSED; width.into()]; height.into()];
+        self.mined_area = vec![vec![data_types::CellStatus::CLOSED; width.into()]; height.into()];
         Self::fill_mine_area(&mut self.mined_area, mine_count);
     }
 
@@ -54,8 +64,73 @@ pub struct Model {
 }
 
 impl Model {
-    fn set_cell(&mut self, x: u16, y: u16, stat: data_types::CellStatus) {
-        self.both_area.game_area[x as usize][y as usize] = stat;
+    pub fn new() -> Self {
+        let both_area = GameArea::new();
+        Model { both_area }
+    }
+
+    pub fn create_game_area(&mut self, width: u16, height: u16, mine_count: u8) {
+        self.both_area.create_area(width, height, mine_count);
+    }
+
+    pub fn set_cell(&mut self, x: u16, y: u16, action: Action) {
+        let cell_status = match action {
+            Action::FLAGCELL => CellStatus::FLAGED,
+            Action::UNFLAGCELL => CellStatus::CLOSED,
+            Action::CHECKCELL => {
+                self.open_cell(x.into(), y.into());
+                CellStatus::OPENED(0)
+            }
+        };
+        self.both_area.game_area[x as usize][y as usize] = cell_status;
+    }
+
+    pub fn get_game_area(&self) -> &Vec<Vec<data_types::CellStatus>> {
+        &self.both_area.game_area
+    }
+
+    fn open_cell(&mut self, x: usize, y: usize) {
+        let width = self.both_area.mined_area.len();
+        let height = self.both_area.mined_area[0].len();
+        if self.both_area.game_area[x][y] != CellStatus::CLOSED {
+            return;
+        }
+
+        let mut mine_count = 0;
+        for i in 0..3 {
+            for j in 0..3 {
+                if i == 1 && j == 1 {
+                    continue;
+                }
+                let new_x = x as i32 + i - 1;
+                let new_y = y as i32 + j - 1;
+                if new_x >= 0
+                    && new_x < width as i32
+                    && new_y >= 0
+                    && new_y < height as i32
+                    && self.both_area.mined_area[new_x as usize][new_y as usize]
+                        == CellStatus::MINED
+                {
+                    mine_count += 1;
+                }
+            }
+        }
+
+        self.both_area.game_area[x][y] = CellStatus::OPENED(mine_count);
+        if mine_count == 0 {
+            for i in 0..3 {
+                for j in 0..3 {
+                    if i == 1 && j == 1 {
+                        continue;
+                    }
+                    let new_x = x as i32 + i - 1;
+                    let new_y = y as i32 + j - 1;
+                    if new_x >= 0 && new_x < width as i32 && new_y >= 0 && new_y < height as i32 {
+                        self.open_cell(new_x as usize, new_y as usize);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -110,4 +185,3 @@ impl UniformSampler for UniformPoint {
         }
     }
 }
-

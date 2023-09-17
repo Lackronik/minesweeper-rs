@@ -8,7 +8,10 @@ use view::View;
 mod view;
 
 fn main() {
-    let mut view: View;
-    let mut controller: Controller;
-    let mut model: Model;
+    let view = View::new();
+    let mut model = Model::new();
+
+    let mut controller = Controller::new(&view, &mut model);
+
+    controller.start();
 }
